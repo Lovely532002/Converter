@@ -30,53 +30,53 @@ namespace WebApplication1.Services
         }
 
         private static void ProcessVideo(VideoJob job, string url, string format)
+{
+    try
+    {
+        var outputDir = Path.Combine(Directory.GetCurrentDirectory(), "output");
+        Directory.CreateDirectory(outputDir);
+
+        string outputFile;
+        string ytDlpArgs;
+
+        var ytDlpPath = "yt-dlp";
+
+        if (format == "mp3")
         {
-            try
-            {
-                var outputDir = Path.Combine(Directory.GetCurrentDirectory(), "output");
-                Directory.CreateDirectory(outputDir);
+            outputFile = Path.Combine(outputDir, $"{job.JobId}.mp3");
 
-                string outputFile;
-                string ytDlpArgs;
-
-                // ✅ Linux container me ye dono system PATH se milenge
-                var ytDlpPath = "yt-dlp";
-                var ffmpegPath = "ffmpeg";
-
-                if (format == "mp3")
-                {
-                    outputFile = Path.Combine(outputDir, $"{job.JobId}.mp3");
-
-                    ytDlpArgs =
-                        $"-x --audio-format mp3 --audio-quality 0 " +
-                        $"--ffmpeg-location {ffmpegPath} " +
-                        $"-o \"{outputFile}\" \"{url}\"";
-                }
-                else
-                {
-                    outputFile = Path.Combine(outputDir, $"{job.JobId}.mp4");
-
-                    ytDlpArgs =
-                        $"-f bestvideo+bestaudio --merge-output-format mp4 " +
-                        $"--ffmpeg-location {ffmpegPath} " +
-                        $"-o \"{outputFile}\" \"{url}\"";
-                }
-
-                RunProcess(ytDlpPath, ytDlpArgs, job);
-
-                if (!File.Exists(outputFile))
-                    throw new Exception("Output file not created");
-
-                job.Progress = 100;
-                job.Status = "Completed";
-                job.OutputPath = outputFile;
-            }
-            catch (Exception ex)
-            {
-                job.Status = "Failed";
-                job.Error = ex.Message;
-            }
+            ytDlpArgs =
+                $"-x --audio-format mp3 --audio-quality 0 " +
+                $"--no-check-certificate --geo-bypass " +
+                $"--add-header \"User-Agent: Mozilla/5.0\" " +
+                $"-o \"{outputFile}\" \"{url}\"";
         }
+        else
+        {
+            outputFile = Path.Combine(outputDir, $"{job.JobId}.mp4");
+
+            ytDlpArgs =
+                $"-f bestvideo+bestaudio --merge-output-format mp4 " +
+                $"--no-check-certificate --geo-bypass " +
+                $"--add-header \"User-Agent: Mozilla/5.0\" " +
+                $"-o \"{outputFile}\" \"{url}\"";
+        }
+
+        RunProcess(ytDlpPath, ytDlpArgs, job);
+
+        if (!File.Exists(outputFile))
+            throw new Exception("Output file not created");
+
+        job.Progress = 100;
+        job.Status = "Completed";
+        job.OutputPath = outputFile;
+    }
+    catch (Exception ex)
+    {
+        job.Status = "Failed";
+        job.Error = ex.Message;
+    }
+}
 
        private static void RunProcess(string exePath, string args, VideoJob job)
 {
