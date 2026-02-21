@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Authors>Lovely Prajapati</Authors>
+    <Company>Lovely Era</Company>
+    <Product>Lovely Youtube Converter</Product>
+    <Description>Faster Conversion</Description>
+    <Copyright>@2026, all rights reserved, Lovely Era.</Copyright>
+    <AssemblyName>Lovely</AssemblyName>
+    <RootNamespace>Lovely</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+</Project>
