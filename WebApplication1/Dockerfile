@@ -1,15 +1,19 @@
-# Build stage
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+WORKDIR /app
+
+# Install yt-dlp in Linux container
+RUN apt-get update && apt-get install -y yt-dlp
+
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
+COPY ["WebApplication1.csproj", "."]
+RUN dotnet restore
 
-COPY . ./
-RUN dotnet restore WebApplication1.csproj
-RUN dotnet publish WebApplication1.csproj -c Release -o /app/publish
+COPY . .
+RUN dotnet publish -c Release -o /app/publish
 
-# Runtime stage
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
+FROM base AS final
 WORKDIR /app
 COPY --from=build /app/publish .
 
-EXPOSE 80
 ENTRYPOINT ["dotnet", "Lovely.dll"]
