@@ -78,47 +78,48 @@ namespace WebApplication1.Services
             }
         }
 
-        private static void RunProcess(string exePath, string args, VideoJob job)
+       private static void RunProcess(string exePath, string args, VideoJob job)
+{
+    var psi = new ProcessStartInfo
+    {
+        FileName = exePath,
+        Arguments = args,
+        RedirectStandardOutput = true,
+        RedirectStandardError = true,
+        UseShellExecute = false,
+        CreateNoWindow = true
+    };
+
+    using var process = new Process { StartInfo = psi };
+
+    string errorOutput = "";
+
+    process.OutputDataReceived += (s, e) =>
+    {
+        if (string.IsNullOrWhiteSpace(e.Data)) return;
+
+        var match = Regex.Match(e.Data, @"(\d{1,3}\.\d+)%");
+        if (match.Success)
         {
-            var psi = new ProcessStartInfo
-            {
-                FileName = exePath,
-                Arguments = args,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using var process = new Process { StartInfo = psi };
-
-            process.OutputDataReceived += (s, e) =>
-            {
-                if (string.IsNullOrWhiteSpace(e.Data)) return;
-
-                var match = Regex.Match(e.Data, @"(\d{1,3}\.\d+)%");
-
-                if (match.Success)
-                {
-                    if (float.TryParse(match.Groups[1].Value, out float progress))
-                        job.Progress = (int)progress;
-                }
-            };
-
-            process.ErrorDataReceived += (s, e) =>
-            {
-                if (!string.IsNullOrWhiteSpace(e.Data))
-                    job.Error = e.Data;
-            };
-
-            process.Start();
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
-            process.WaitForExit();
-
-            if (process.ExitCode != 0)
-                throw new Exception("yt-dlp process failed");
+            if (float.TryParse(match.Groups[1].Value, out float progress))
+                job.Progress = (int)progress;
         }
+    };
+
+    process.ErrorDataReceived += (s, e) =>
+    {
+        if (!string.IsNullOrWhiteSpace(e.Data))
+            errorOutput += e.Data + "\n";
+    };
+
+    process.Start();
+    process.BeginOutputReadLine();
+    process.BeginErrorReadLine();
+    process.WaitForExit();
+
+    if (process.ExitCode != 0)
+        throw new Exception($"yt-dlp failed: {errorOutput}");
+}
 
         private static void ClearOutputFolder()
         {
