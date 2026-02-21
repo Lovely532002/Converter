@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using WebApplication1.Models;
@@ -7,7 +7,6 @@ namespace WebApplication1.Services
 {
     public static class VideoConvertService
     {
-        #region Lovely
         public static ConcurrentDictionary<string, VideoJob> Jobs = new();
 
         public static string StartConvert(string url, string format)
@@ -40,8 +39,9 @@ namespace WebApplication1.Services
                 string outputFile;
                 string ytDlpArgs;
 
-                var ffmpegPath = Path.Combine(Directory.GetCurrentDirectory(), "ffmpeg");
-                var ytDlpPath = Path.Combine("yt-dlp", "yt-dlp.exe");
+                // ✅ Linux container me ye dono system PATH se milenge
+                var ytDlpPath = "yt-dlp";
+                var ffmpegPath = "ffmpeg";
 
                 if (format == "mp3")
                 {
@@ -49,7 +49,7 @@ namespace WebApplication1.Services
 
                     ytDlpArgs =
                         $"-x --audio-format mp3 --audio-quality 0 " +
-                        $"--ffmpeg-location \"{ffmpegPath}\" " +
+                        $"--ffmpeg-location {ffmpegPath} " +
                         $"-o \"{outputFile}\" \"{url}\"";
                 }
                 else
@@ -58,7 +58,7 @@ namespace WebApplication1.Services
 
                     ytDlpArgs =
                         $"-f bestvideo+bestaudio --merge-output-format mp4 " +
-                        $"--ffmpeg-location \"{ffmpegPath}\" " +
+                        $"--ffmpeg-location {ffmpegPath} " +
                         $"-o \"{outputFile}\" \"{url}\"";
                 }
 
@@ -96,18 +96,24 @@ namespace WebApplication1.Services
             {
                 if (string.IsNullOrWhiteSpace(e.Data)) return;
 
-                // yt-dlp progress line example:
-                // [download]  34.2%
                 var match = Regex.Match(e.Data, @"(\d{1,3}\.\d+)%");
 
                 if (match.Success)
                 {
-                    job.Progress = (int)float.Parse(match.Groups[1].Value);
+                    if (float.TryParse(match.Groups[1].Value, out float progress))
+                        job.Progress = (int)progress;
                 }
+            };
+
+            process.ErrorDataReceived += (s, e) =>
+            {
+                if (!string.IsNullOrWhiteSpace(e.Data))
+                    job.Error = e.Data;
             };
 
             process.Start();
             process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
             process.WaitForExit();
 
             if (process.ExitCode != 0)
@@ -126,7 +132,5 @@ namespace WebApplication1.Services
                 try { File.Delete(file); } catch { }
             }
         }
-        #endregion
     }
 }
-
