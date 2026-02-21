@@ -12,4 +12,4 @@ WORKDIR /app
 COPY --from=build /app/publish .
 
 EXPOSE 80
-ENTRYPOINT ["dotnet", "WebApplication1.dll"]
+ENTRYPOINT ["dotnet", "Lovely.dll"]
